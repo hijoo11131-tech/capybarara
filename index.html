@@ -251,6 +251,17 @@ function precomputeDist() {
 function buildFog() {
   fogAlpha = new Float32Array(W*H);
   origFog  = new Float32Array(W*H);
+
+  /* 까만 화면 방지 - 즉시 흰 안개로 덮기 */
+  if (W && H) {
+    var idTemp = fogCtx.createImageData(W, H);
+    var dTemp = idTemp.data;
+    for (var ti = 0; ti < W*H; ti++) {
+      dTemp[ti*4]=214; dTemp[ti*4+1]=228; dTemp[ti*4+2]=224; dTemp[ti*4+3]=248;
+    }
+    fogCtx.putImageData(idTemp, 0, 0);
+  }
+
   for (var y = 0; y < H; y++) {
     for (var x = 0; x < W; x++) {
       var v = 0.96
