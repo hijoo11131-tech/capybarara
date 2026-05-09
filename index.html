@@ -96,29 +96,36 @@ function unlockAudio() {
   if (bgmStarted) return;
   bgmStarted = true;
 
-  /* wipe/type 만 unlock — chime은 제외 (첫 터치때 울리는 버그 방지) */
-  [wipeAudio, typeAudio].forEach(function(a) {
+  /* 무음 AudioContext로 모든 오디오 unlock */
+  var AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (AudioContext) {
+    var ctx = new AudioContext();
+    var buf = ctx.createBuffer(1, 1, 22050);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    setTimeout(function(){ ctx.close(); }, 100);
+  }
+  [wipeAudio, typeAudio, bgmAudio].forEach(function(a) {
     a.volume = 0;
     var p = a.play();
-    if (p) p.then(function(){ a.pause(); a.currentTime = 0; a.volume = 1; }).catch(function(){});
+    if (p) p.then(function(){ a.pause(); a.currentTime = 0; }).catch(function(){});
   });
 
-  /* BGM은 약간 딜레이 후 재생 — unlock과 충돌 방지 */
-  bgmAudio.volume = 0;
-  bgmAudio.loop = true;
-  var p = bgmAudio.play();
-  if (p) {
-    p.then(function() {
-      /* 재생 시작되면 볼륨 서서히 올리기 */
-      bgmAudio.volume = 0;
+  /* BGM 페이드인 시작 */
+  setTimeout(function() {
+    bgmAudio.volume = 0;
+    bgmAudio.loop = true;
+    bgmAudio.play().then(function() {
       var vol = 0;
       var fade = setInterval(function() {
         vol += 0.02;
         if (vol >= 0.35) { vol = 0.35; clearInterval(fade); }
         bgmAudio.volume = vol;
       }, 80);
-    }).catch(function(e) { console.log('bgm err:', e); });
-  }
+    }).catch(function(){});
+  }, 200);
 }
 
 function startBgm() { unlockAudio(); }
@@ -143,15 +150,9 @@ function playType() {
 }
 
 function playChime() {
-  /* 모바일 unlock 겸 재생 */
-  chimeAudio.volume = 0;
   chimeAudio.currentTime = 0;
-  var p = chimeAudio.play();
-  if (p) {
-    p.then(function() {
-      chimeAudio.volume = 0.12;
-    }).catch(function(){});
-  }
+  chimeAudio.volume = 0.12;
+  chimeAudio.play().catch(function(){});
 }
 
 
