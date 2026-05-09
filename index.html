@@ -96,8 +96,8 @@ function unlockAudio() {
   if (bgmStarted) return;
   bgmStarted = true;
 
-  /* wipe/chime/type 만 unlock (bgm 제외) */
-  [wipeAudio, chimeAudio, typeAudio].forEach(function(a) {
+  /* wipe/type 만 unlock — chime은 제외 (첫 터치때 울리는 버그 방지) */
+  [wipeAudio, typeAudio].forEach(function(a) {
     a.volume = 0;
     var p = a.play();
     if (p) p.then(function(){ a.pause(); a.currentTime = 0; a.volume = 1; }).catch(function(){});
