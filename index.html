@@ -96,36 +96,38 @@ function unlockAudio() {
   if (bgmStarted) return;
   bgmStarted = true;
 
-  /* 무음 AudioContext로 모든 오디오 unlock */
-  var AudioContext = window.AudioContext || window.webkitAudioContext;
-  if (AudioContext) {
-    var ctx = new AudioContext();
-    var buf = ctx.createBuffer(1, 1, 22050);
-    var src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    setTimeout(function(){ ctx.close(); }, 100);
-  }
-  [wipeAudio, typeAudio, bgmAudio].forEach(function(a) {
-    a.volume = 0;
-    var p = a.play();
-    if (p) p.then(function(){ a.pause(); a.currentTime = 0; }).catch(function(){});
-  });
+  /* 모든 오디오 0볼륨으로 play/pause — 모바일 포함 unlock */
+  var audios = [wipeAudio, typeAudio, chimeAudio, bgmAudio];
+  var unlocked = 0;
 
-  /* BGM 페이드인 시작 */
-  setTimeout(function() {
-    bgmAudio.volume = 0;
-    bgmAudio.loop = true;
-    bgmAudio.play().then(function() {
-      var vol = 0;
-      var fade = setInterval(function() {
-        vol += 0.02;
-        if (vol >= 0.35) { vol = 0.35; clearInterval(fade); }
-        bgmAudio.volume = vol;
-      }, 80);
-    }).catch(function(){});
-  }, 200);
+  audios.forEach(function(a) {
+    a.volume = 0;
+    a.currentTime = 0;
+    var p = a.play();
+    if (p) {
+      p.then(function() {
+        a.pause();
+        a.currentTime = 0;
+        unlocked++;
+        /* 모두 unlock되면 BGM 시작 */
+        if (unlocked === audios.length) {
+          bgmAudio.loop = true;
+          bgmAudio.play().then(function() {
+            var vol = 0;
+            var fade = setInterval(function() {
+              vol += 0.02;
+              if (vol >= 0.35) { vol = 0.35; clearInterval(fade); }
+              bgmAudio.volume = vol;
+            }, 80);
+          }).catch(function(){});
+        }
+      }).catch(function(){
+        unlocked++;
+      });
+    } else {
+      unlocked++;
+    }
+  });
 }
 
 function startBgm() { unlockAudio(); }
