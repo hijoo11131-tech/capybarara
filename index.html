@@ -143,9 +143,15 @@ function playType() {
 }
 
 function playChime() {
-  chimeAudio.volume = 0.12;
+  /* 모바일 unlock 겸 재생 */
+  chimeAudio.volume = 0;
   chimeAudio.currentTime = 0;
-  chimeAudio.play().catch(function(){});
+  var p = chimeAudio.play();
+  if (p) {
+    p.then(function() {
+      chimeAudio.volume = 0.12;
+    }).catch(function(){});
+  }
 }
 
 
